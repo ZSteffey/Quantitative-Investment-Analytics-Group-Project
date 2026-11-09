@@ -5,6 +5,9 @@
 CAPM, FF3, FF5+Momentum), the 1/N and S&P 500 benchmarks, all performance
 measures, tables and figures.
 
+Written report: [Markowitz Portfolio Optimization and Performance Evaluation](https://claude.ai/artifact/HuNdKD8JvxA67fWC1dKjb2)
+(Claude Doc, shared with the group; export to Word/PDF for submission).
+
 ## Run
 
 ```

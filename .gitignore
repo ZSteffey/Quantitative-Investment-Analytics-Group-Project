@@ -1,0 +1,12 @@
+# Course materials (instructor's files, not ours to publish)
+Group Assignment.pdf
+capm.py
+apt_python_inclass.py
+mpt_python_inclass.py
+*exercise*solutions*.py
+
+# Python / local
+__pycache__/
+*.pyc
+ca_bundle.pem
+.vscode/
