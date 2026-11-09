@@ -71,19 +71,19 @@ for d in (DATA_DIR, OUT_DIR, FIG_DIR):
 # sample, to limit hindsight / survivorship bias): large U.S. companies that
 # were S&P 500 members in 2010, spread across all 11 GICS sectors, including
 # names that later did badly (INTC, GE, F, FCX, SLB, BA, WBA-style laggards).
-# We add three companies that IPO'd after 2011 (META, ABBV, PYPL) to show how
-# listing dates are handled: their pre-IPO returns are MISSING (NaN), not zero,
-# and they only enter the universe once they have five full years of returns.
+# Listing dates are still handled generally: any pre-IPO returns are MISSING
+# (NaN), not zero, and a stock only enters the universe once it has five full
+# years of returns in the estimation window.
 
 sectors = {
     "AAPL": "Info Tech",   "MSFT": "Info Tech",   "IBM":  "Info Tech",
     "INTC": "Info Tech",   "CSCO": "Info Tech",   "ORCL": "Info Tech",
     "GOOGL": "Comm Svcs",  "T":    "Comm Svcs",   "VZ":   "Comm Svcs",
-    "DIS":  "Comm Svcs",   "META": "Comm Svcs",
+    "DIS":  "Comm Svcs",   "NFLX": "Comm Svcs",
     "JPM":  "Financials",  "BAC":  "Financials",  "WFC":  "Financials",
-    "BRK-B": "Financials", "PYPL": "Financials",
+    "BRK-B": "Financials", "V":    "Financials",
     "JNJ":  "Health Care", "PFE":  "Health Care", "MRK":  "Health Care",
-    "UNH":  "Health Care", "AMGN": "Health Care", "ABBV": "Health Care",
+    "UNH":  "Health Care", "AMGN": "Health Care", "LLY":  "Health Care",
     "PG":   "Cons Staples","KO":   "Cons Staples","PEP":  "Cons Staples",
     "WMT":  "Cons Staples",
     "AMZN": "Cons Discr",  "HD":   "Cons Discr",  "MCD":  "Cons Discr",
@@ -110,16 +110,25 @@ print("Number of stocks:", len(tickers))
 # file that includes your Windows root certificates fixes it (see README.md).
 
 prices_file = os.path.join(DATA_DIR, "prices_adj_close.csv")
+wanted = tickers + [SP500]
 
 if os.path.exists(prices_file):
     prices = pd.read_csv(prices_file, index_col=0, parse_dates=True)
     print("Loaded cached prices:", prices_file)
 else:
-    print("Downloading prices for", len(tickers), "stocks + S&P 500 ...")
-    data = yf.download(tickers + [SP500], start=PRICE_START, end=PRICE_END,
+    prices = pd.DataFrame()
+
+# download only the tickers the cache does not have yet (e.g. after changing the universe)
+missing = [t for t in wanted if t not in prices.columns]
+if missing:
+    print("Downloading prices for:", missing)
+    data = yf.download(missing, start=PRICE_START, end=PRICE_END,
                        auto_adjust=False, progress=True)
-    prices = data["Adj Close"]                 # adjusted for splits & dividends
-    prices = prices[tickers + [SP500]]         # keep a fixed column order
+    new = data["Adj Close"]                    # adjusted for splits & dividends
+    prices = new if prices.empty else prices.join(new, how="outer")
+
+if missing or list(prices.columns) != wanted:
+    prices = prices[wanted]                    # fixed column order, drop removed tickers
     prices.index.name = "Date"
     prices.to_csv(prices_file)
     print("Saved:", prices_file)
